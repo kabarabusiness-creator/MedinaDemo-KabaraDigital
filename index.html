@@ -1006,13 +1006,13 @@
         <label for="kbMsg">Nachricht (optional)</label>
         <textarea id="kbMsg" name="msg" placeholder="Kurze Anmerkung..."></textarea>
         <button type="submit" class="btn btn-gold">Interesse jetzt bestätigen</button>
-        <p class="modal-note">Öffnet WhatsApp mit Ihrer ausgefüllten Nachricht an Kabara Digital.</p>
+        <p class="modal-note">Ihre Anfrage wird direkt und unverbindlich an Kabara Digital gesendet.</p>
       </form>
     </div>
     <div class="modal-success" id="kabaraSuccess">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></svg>
       <h4 style="font-family:'Fraunces',serif; font-weight:500;">Vielen Dank!</h4>
-      <p>Ihre Anfrage wurde vorbereitet – bitte senden Sie die geöffnete WhatsApp-Nachricht ab, damit sich Kabara Digital bei Ihnen melden kann.</p>
+      <p>Ihre Anfrage ist unterwegs zu Kabara Digital – wir melden uns bei Ihnen.</p>
     </div>
   </div>
 </div>
@@ -1082,18 +1082,46 @@
     if (e.key === 'Escape' && kabaraModal.classList.contains('open')) closeKabaraModal();
   });
 
-  kabaraForm.addEventListener('submit', function(e){
+  kabaraForm.addEventListener('submit', async function(e){
     e.preventDefault();
     const name = document.getElementById('kbName').value.trim();
     const contact = document.getElementById('kbContact').value.trim();
     const msg = document.getElementById('kbMsg').value.trim();
+    const submitBtn = kabaraForm.querySelector('.btn-gold');
+    const originalBtnText = submitBtn.textContent;
 
-    const text = `Hallo Kabara Digital,%0A%0Aich bin an der vorgeschlagenen Website für MEDINA FASHION & FOOD interessiert.%0A%0AName: ${encodeURIComponent(name)}%0AKontakt: ${encodeURIComponent(contact)}${msg ? '%0AAnmerkung: ' + encodeURIComponent(msg) : ''}`;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Wird gesendet …';
 
-    kabaraFormWrap.style.display = 'none';
-    kabaraSuccess.classList.add('show');
+    const formData = new FormData();
+    formData.append('access_key', 'bdd6dddb-4704-45f9-87df-1bdd1b5a3eb2');
+    formData.append('subject', `Interesse an Website-Vorschlag – ${name || 'MEDINA FASHION & FOOD'}`);
+    formData.append('from_name', 'MEDINA FASHION & FOOD Website-Vorschlag');
+    formData.append('Name', name);
+    formData.append('Kontakt', contact);
+    if (msg) formData.append('Anmerkung', msg);
 
-    window.open(`https://wa.me/4915129534820?text=${text}`, '_blank');
+    try {
+      const res = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        body: formData,
+        headers: { 'Accept': 'application/json' }
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        kabaraFormWrap.style.display = 'none';
+        kabaraSuccess.classList.add('show');
+      } else {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalBtnText;
+        alert('Senden hat leider nicht geklappt. Bitte versuchen Sie es erneut oder schreiben Sie an info@kabaradigital.de.');
+      }
+    } catch (err) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalBtnText;
+      alert('Senden hat leider nicht geklappt. Bitte versuchen Sie es erneut oder schreiben Sie an info@kabaradigital.de.');
+    }
   });
 </script>
 
